@@ -224,14 +224,21 @@ class _MealPlanPageState extends State<MealPlanPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                // Save or update meal plan in the database
-                MealPlanRecord mealPlanRecord = MealPlanRecord(
-                  date: _formatSelectedDay(),
-                  targetCalories: widget.targetCalories,
-                  items: selectedFoodItemsMap,
-                );
+                final int? targetCalories = int.tryParse(_calorieController.text);
 
-                await _saveMealPlan();
+                if (targetCalories != null && calorieTotal <= targetCalories) {
+                  await _saveMealPlan();
+                } else {
+                  // Display a confirmation dialog
+                  bool clearItems = await _showClearItemsDialog();
+                  if (clearItems) {
+                    // Clear items and update target calories
+                    setState(() {
+                      selectedFoodItemsMap.clear();
+                      calorieTotal = 0;
+                    });
+                  }
+                }
               },
               child: Text('Save Changes'),
             ),
@@ -268,7 +275,7 @@ class _MealPlanPageState extends State<MealPlanPage> {
         return AlertDialog(
           title: Text('Warning'),
           content: Text(
-            'Changing the target calories will require removing the current items from the meal plan. Do you want to proceed?',
+            'Target calories is lower than calorie total. This will require removing the current items from the meal plan. Do you want to proceed?',
           ),
           actions: <Widget>[
             TextButton(
@@ -290,10 +297,36 @@ class _MealPlanPageState extends State<MealPlanPage> {
   }
 
   Future<void> _saveMealPlan() async {
+    // Parse the target calories from the text field
+    int targetCalories = int.tryParse(_calorieController.text) ?? 1000;
+
+    // Check if the list of selected food items is empty
+    if (selectedFoodItemsMap.isEmpty) {
+      // Show an alert dialog
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Empty Meal Plan'),
+            content: Text('Please select food items to add to the meal plan.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+      return; // Do not proceed with saving the meal plan
+    }
+
     // Save or update meal plan in the database
     MealPlanRecord mealPlanRecord = MealPlanRecord(
       date: _formatSelectedDay(),
-      targetCalories: widget.targetCalories,
+      targetCalories: targetCalories,
       items: selectedFoodItemsMap,
     );
 
