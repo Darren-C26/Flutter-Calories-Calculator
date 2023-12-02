@@ -62,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             TableCalendar(
               firstDay: DateTime.utc(2023, 1, 1),
-              lastDay: DateTime.utc(2023, 12, 31),
+              lastDay: DateTime.utc(2024, 12, 31),
               focusedDay: _selectedDay,
               calendarFormat: _calendarFormat,
               selectedDayPredicate: (day) {
