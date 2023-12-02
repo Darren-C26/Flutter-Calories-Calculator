@@ -52,12 +52,32 @@ class MealPlanDatabase {
 
   Future<void> saveMealPlan(MealPlanRecord mealPlan) async {
     Database db = await database;
-    await db.insert(
-      tableName,
-      mealPlan.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+
+    int existingRecordCount = Sqflite.firstIntValue(
+      await db.rawQuery(
+        'SELECT COUNT(*) FROM $tableName WHERE $columnDate = ?',
+        [mealPlan.date],
+      ),
+    ) ?? 0;
+
+    if (existingRecordCount > 0) {
+      // If a record for this date already exists, update it
+      await db.update(
+        tableName,
+        mealPlan.toMap(),
+        where: '$columnDate = ?',
+        whereArgs: [mealPlan.date],
+      );
+    } else {
+      // Otherwise, insert a new record
+      await db.insert(
+        tableName,
+        mealPlan.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
   }
+
 
   Future<MealPlanRecord?> getMealPlan(String formattedDate) async {
     Database db = await database;
