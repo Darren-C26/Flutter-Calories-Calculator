@@ -93,5 +93,17 @@ class MealPlanDatabase {
 
     return MealPlanRecord.fromMap(maps.first);
   }
+
+  Future<void> deleteMealPlan(String formattedDate) async {
+    Database db = await database;
+
+    await db.delete(
+      tableName,
+      where: '$columnDate = ?',
+      whereArgs: [formattedDate],
+    );
+  }
+
+
 }
 
