@@ -60,6 +60,13 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            // Description above the calendar
+            Text(
+              'Select a day from the calendar to edit or create a meal plan. '
+                  'If a meal plan was already created, it will appear below.',
+              style: TextStyle(fontSize: 20),
+            ),
+            SizedBox(height: 20),
             TableCalendar(
               firstDay: DateTime.utc(2023, 1, 1),
               lastDay: DateTime.utc(2024, 12, 31),
@@ -100,11 +107,32 @@ class _MyHomePageState extends State<MyHomePage> {
                       Text('Meal Plan for ${_formatSelectedDay(_selectedDay)}'),
                       Text('Target Calories: ${mealPlanRecord.targetCalories}'),
                       Text('Items: ${mealPlanRecord.items}'),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () async {
+                          // Show a confirmation dialog before deleting
+                          bool proceedToDelete = await _showDeleteConfirmationDialog();
+                          if (proceedToDelete) {
+                            await MealPlanDatabase().deleteMealPlan(mealPlanRecord.date);
+                            setState(() {
+                              // Reset the selected day after deleting
+                              _selectedDay = DateTime.now();
+                            });
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red, // Set the button color to red
+                          foregroundColor: Colors.white, // Set the text color to white
+                          minimumSize: Size(150, 40), // Set the button size
+                        ),
+                        child: Text('Delete Meal Plan'),
+                      ),
                     ],
                   );
                 } else {
                   // No Meal Plan for the selected day
-                  return Text('No meal plan has been created for this day.');
+                  return Text('No meal plan has been created for this day.',
+                      style: TextStyle(fontSize: 18));
                 }
               },
             ),
@@ -127,4 +155,31 @@ class _MyHomePageState extends State<MyHomePage> {
     ];
     return months[month - 1];
   }
+
+  Future<bool> _showDeleteConfirmationDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Meal Plan'),
+          content: Text('Are you sure you want to delete the meal plan for this day?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false); // No, cancel the action
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true); // Yes, proceed with deleting
+              },
+              child: Text('Delete'),
+            ),
+          ],
+        );
+      },
+    ) ?? false; // Default to false if the user cancels the dialog
+  }
+
 }
